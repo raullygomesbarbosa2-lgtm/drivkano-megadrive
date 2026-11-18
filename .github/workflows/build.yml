@@ -9,7 +9,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Build ROM with SGDK container
-        run: docker run --rm -v "$GITHUB_WORKSPACE:/m68k" -w /m68k ghcr.io/rhargreaves/docker-sgdk:v2.00
+        run: docker run --rm --user "$(id -u):$(id -g)" -v "$GITHUB_WORKSPACE:/m68k" -w /m68k ghcr.io/rhargreaves/docker-sgdk:v2.00
       - uses: actions/upload-artifact@v4
         with:
           name: Drivkano-ROM-and-source
