@@ -1,17 +1,27 @@
 #include <genesis.h>
+#include "resources.h"
 
-#define FLOOR_Y 24
+#define FLOOR_Y 184
 
-static s16 playerX = 5;
+static s16 playerX = 40;
 static s16 playerLife = 5;
 static s16 drivEnergy = 0;
-static s16 enemyX = 23;
+static s16 enemyX = 184;
 static s16 enemyLife = 3;
-static s16 bossX = 33;
+static s16 bossX = 264;
 static s16 bossLife = 8;
 static u16 frameCount = 0;
 static char status[41];
-static char floorLine[41];
+static Sprite *rynSprite;
+static Sprite *raiderSprite;
+static Sprite *vorathSprite;
+
+static u16 closeEnough(s16 a, s16 b, s16 distance)
+{
+    s16 delta = a - b;
+    if (delta < 0) delta = -delta;
+    return delta < distance;
+}
 
 static void drawScene(void)
 {
@@ -27,19 +37,9 @@ static void drawScene(void)
     VDP_drawText("     ^^^       ^^^       ^^^", 1, 12);
     VDP_drawText("   ^^^^^^^   ^^^^^^^   ^^^^^^^", 1, 13);
     VDP_drawText("[BRIM]       [RUINAS]       [TEMPESTADE]", 1, 17);
-    for (i = 0; i < 40; i++) floorLine[i] = (i & 1) ? '_' : '=';
-    floorLine[40] = 0;
-    VDP_drawText(floorLine, 0, FLOOR_Y);
-    VDP_drawText("RYN", playerX, FLOOR_Y - 2);
-    VDP_drawText("@", playerX + 1, FLOOR_Y - 1);
-    if (enemyLife > 0) {
-        VDP_drawText("G", enemyX, FLOOR_Y - 1);
-        VDP_drawText("INIMIGO", enemyX > 30 ? 28 : enemyX - 2, FLOOR_Y - 3);
-    }
-    if (bossLife > 0) {
-        VDP_drawText("V", bossX, FLOOR_Y - 1);
-        VDP_drawText("VORATH", bossX - 2, FLOOR_Y - 3);
-    }
+    for (i = 0; i < 40; i++) status[i] = (i & 1) ? '_' : '=';
+    status[40] = 0;
+    VDP_drawText(status, 0, 23);
     if (playerLife <= 0) VDP_drawText("RYN CAIU! START PARA TENTAR DE NOVO", 3, 21);
     else if (bossLife <= 0) VDP_drawText("A TEMPESTADE CEDEU! DEMO CONCLUIDA", 3, 21);
     else if (enemyLife <= 0) VDP_drawText("INIMIGO DERROTADO! SIGA A DIREITA", 3, 21);
@@ -51,6 +51,10 @@ int main(void)
     u16 joy;
     JOY_init();
     VDP_setScreenWidth320();
+    SPR_init();
+    rynSprite = SPR_addSprite(&Ryn, playerX, FLOOR_Y - 32, TILE_ATTR(PAL1, TRUE, FALSE, FALSE));
+    raiderSprite = SPR_addSprite(&Raider, enemyX, FLOOR_Y - 32, TILE_ATTR(PAL1, TRUE, FALSE, FALSE));
+    vorathSprite = SPR_addSprite(&Vorath, bossX, FLOOR_Y - 64, TILE_ATTR(PAL1, TRUE, FALSE, FALSE));
     while (TRUE)
     {
         joy = JOY_readJoypad(JOY_1);
@@ -60,17 +64,17 @@ int main(void)
             drivEnergy = 0;
             enemyLife = 3;
             bossLife = 8;
-            playerX = 5;
-            enemyX = 23;
-            bossX = 33;
+            playerX = 40;
+            enemyX = 184;
+            bossX = 264;
         }
-        if ((joy & BUTTON_LEFT) && playerX > 1) playerX--;
-        if ((joy & BUTTON_RIGHT) && playerX < 36) playerX++;
+        if ((joy & BUTTON_LEFT) && playerX > 4) playerX -= 2;
+        if ((joy & BUTTON_RIGHT) && playerX < 280) playerX += 2;
         if (joy & BUTTON_A) {
-            if (enemyLife > 0 && (playerX - enemyX < 4) && (enemyX - playerX < 4)) {
+            if (enemyLife > 0 && closeEnough(playerX, enemyX, 40)) {
                 enemyLife--;
                 if (drivEnergy < 9) drivEnergy++;
-            } else if (bossLife > 0 && (playerX - bossX < 5) && (bossX - playerX < 5)) {
+            } else if (bossLife > 0 && closeEnough(playerX, bossX, 48)) {
                 bossLife--;
                 if (drivEnergy < 9) drivEnergy++;
             }
@@ -80,12 +84,18 @@ int main(void)
             else if (enemyLife > 0) enemyLife = 0;
             drivEnergy--;
         }
-        if ((frameCount % 45) == 0 && playerLife > 0 && enemyLife > 0) playerLife--;
-        if (enemyLife > 0 && (frameCount % 20) == 0) {
-            if (enemyX > playerX + 2) enemyX--;
-            else if (enemyX < playerX - 2) enemyX++;
+        if ((frameCount % 90) == 0 && playerLife > 0 && enemyLife > 0) playerLife--;
+        if (enemyLife > 0 && (frameCount % 4) == 0) {
+            if (enemyX > playerX + 22) enemyX--;
+            else if (enemyX < playerX - 22) enemyX++;
         }
+        SPR_setPosition(rynSprite, playerX, FLOOR_Y - 32);
+        SPR_setPosition(raiderSprite, enemyX, FLOOR_Y - 32);
+        SPR_setVisibility(raiderSprite, enemyLife > 0 ? VISIBILITY_ALWAYS : VISIBILITY_HIDE);
+        SPR_setPosition(vorathSprite, bossX, FLOOR_Y - 64);
+        SPR_setVisibility(vorathSprite, bossLife > 0 ? VISIBILITY_ALWAYS : VISIBILITY_HIDE);
         drawScene();
+        SPR_update();
         SYS_doVBlankProcess();
     }
     return 0;
