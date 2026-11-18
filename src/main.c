@@ -91,9 +91,9 @@ int main(void)
         }
         SPR_setPosition(rynSprite, playerX, FLOOR_Y - 32);
         SPR_setPosition(raiderSprite, enemyX, FLOOR_Y - 32);
-        SPR_setVisibility(raiderSprite, enemyLife > 0 ? VISIBILITY_ALWAYS : VISIBILITY_HIDE);
+        SPR_setVisibility(raiderSprite, enemyLife > 0 ? VISIBLE : HIDDEN);
         SPR_setPosition(vorathSprite, bossX, FLOOR_Y - 64);
-        SPR_setVisibility(vorathSprite, bossLife > 0 ? VISIBILITY_ALWAYS : VISIBILITY_HIDE);
+        SPR_setVisibility(vorathSprite, bossLife > 0 ? VISIBLE : HIDDEN);
         drawScene();
         SPR_update();
         SYS_doVBlankProcess();
